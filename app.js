@@ -48,7 +48,13 @@ function loop(){
         }
       }
       // hours
-      start = scheduleBy(george[hours % 12], start);
+      if (hours == 0) {
+        hours = 12;
+      }
+      if (hours > 12) {
+        hours = hours % 12;
+      }
+      start = scheduleBy(george[hours], start);
       start = scheduleBy(george.thirdstroke, start);
 
     }
