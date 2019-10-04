@@ -1,7 +1,7 @@
 var george = {};
-loadAudio();
 
 function start(){
+  loadAudio();
   document.getElementById('start').style.display = "none";
   var start = new Date();
   setTimeout(loop, 1000 - start.getMilliseconds());
