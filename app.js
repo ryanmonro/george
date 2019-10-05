@@ -2,14 +2,14 @@ var george = {};
 
 function start(){
   loadAudio();
-  document.getElementById('start').style.display = "none";
+  document.getElementById('start').disabled = "true";
   var start = new Date();
   setTimeout(loop, 1000 - start.getMilliseconds());
 }
 
 function displayTime(now){
   var timeElement = document.getElementById('time');
-  timeElement.textContent = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+  timeElement.textContent = "The time is " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
 }
 
 function loop(){

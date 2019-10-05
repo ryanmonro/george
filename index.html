@@ -6,21 +6,41 @@
   <script src="app.js"></script>
   <style>
     body {
+      /*-webkit-font-smoothing: none;*/
       text-align: center;
-      background-color: silver;
-      padding-top: 2em;
+      /*padding-top: 2em;*/
     }
-    #start {
-      font-size: 2em;
+    .header {
+      text-align: center;
+    }
+    .footer {
+      position: absolute;
+      bottom: 0px;
+      width: 100%;
     }
     #time {
-      font-size: 1.5em;
+      font-size: 24px;
     }
+    button {
+      font-family: Times;
+      font-size: 24px;
+      height: 100px;
+      width: 200px;
+    }
+    
   </style>
 </head>
 <body>
-  <h1>George</h1>
-  <button id="start" onClick="start();">Click here to start</button>
-  <p id="time"></p>
+  <div class="header">
+  <img src="images/logo.gif" alt="Telstra" height="128"><br>
+  <img src="images/quote.gif" alt="Australia's leading Telecommunications Provider" height="38"><br>
+  </div>
+  <br><br>
+  <p id="time"> 
+  <button id="start" onClick="start();">Click here to start clock</button>
+  </p>
+  <div class="footer">
+    <img src="images/socog.gif" alt="" height="204"><br>
+  </div>
 </body>
 </html>
