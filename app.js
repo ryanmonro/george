@@ -1,10 +1,35 @@
 var george = new Tone.Players().toMaster();
+var audioNow;
+var firstLoop = true;
+
+function clockLoop(){
+  setInterval(function(){
+    var now = new Date();
+    displayTime(now);
+  }, 1000);
+}
+
+var toneLoop = new Tone.Loop(function(time){
+  if (audioNow.getSeconds() % 10 == 0) {
+    scheduleSounds(time);
+  // } else if(firstLoop == true) {
+  //   // console.log(george.loaded)
+  //   scheduleSounds(time, (audioNow.getSeconds() % 10))
+  }
+  firstLoop = false;
+  audioNow.setSeconds(audioNow.getSeconds() + 1);
+}, 1);
 
 function start(){
   loadAudio();
   document.getElementById('start').disabled = "true";
   var start = new Date();
-  setTimeout(loop, 1000 - start.getMilliseconds());
+  setTimeout(function(){
+    audioNow = new Date();
+    Tone.Transport.start();
+    toneLoop.start(0);
+    clockLoop();
+  }, 1000 - start.getMilliseconds());
 }
 
 function displayTime(now){
@@ -12,64 +37,55 @@ function displayTime(now){
   timeElement.textContent = "The time is " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
 }
 
-function loop(){
-  setInterval(function(){
-    var now = new Date()
-    displayTime(now);
-    var seconds = now.getSeconds()
-    if (seconds % 10 >= 8 || seconds % 10 == 0) {
-      george.get('stroke').start();
+function scheduleSounds(time, backtrack = 0){
+  time = time - backtrack;
+  var nextNow = new Date(audioNow.getTime());
+  nextNow.setSeconds(nextNow.getSeconds() + 10 - backtrack);
+  scheduleSound('stroke', 10, time);
+  scheduleSound('stroke', 9, time);
+  scheduleSound('stroke', 8, time);
+  var seconds = nextNow.getSeconds();
+  var minutes = nextNow.getMinutes();
+  var hours = nextNow.getHours();
+  var offset = 8;
+  if (seconds == 0) {
+    offset = scheduleSound('precisely', offset, time);
+  } else {
+    offset = scheduleSound('seconds', offset, time);
+    offset = scheduleSound(seconds, offset, time);
+    offset = scheduleSound('and', offset, time);
+  }
+  // minutes
+  if (minutes == 0) {
+    offset = scheduleSound('oclock', offset, time);
+  }
+  if (minutes > 10 && minutes < 20) {
+    offset = scheduleSound(minutes, offset, time);
+  } else {
+    if (minutes % 10 !== 0) {
+      offset = scheduleSound(minutes % 10, offset, time);
     }
-    if (seconds % 10 == 0) {
-      now.setSeconds(seconds + 10);
-      seconds = now.getSeconds();
-      var start = 8000;
-      var minutes = now.getMinutes();
-      var hours = now.getHours();
-      if (seconds == 0) {
-        start = scheduleBy(george.get('precisely'), start);
-      } else {
-        start = scheduleBy(george.get('seconds'), start);
-        start = scheduleBy(george.get(seconds), start);
-        start = scheduleBy(george.get('and'), start);
-      }
-      // minutes
-      if (minutes == 0) {
-        start = scheduleBy(george.get('oclock'), start);
-      }
-      if (minutes > 10 && minutes < 20) {
-        start = scheduleBy(george.get(minutes), start);
-      } else {
-        if (minutes % 10 !== 0) {
-          start = scheduleBy(george.get(minutes % 10), start);
-        }
-        if (minutes >= 10) {
-          start = scheduleBy(george.get(minutes - (minutes % 10)), start);
-        }
-      }
-      // hours
-      if (hours == 0) {
-        hours = 12;
-      }
-      if (hours > 12) {
-        hours = hours % 12;
-      }
-      start = scheduleBy(george.get(hours), start);
-      start = scheduleBy(george.get('thirdstroke'), start);
-
+    if (minutes >= 10) {
+      offset = scheduleSound(minutes - (minutes % 10), offset, time);
     }
-  }, 1000)
+  }
+  // hours
+  if (hours == 0) {
+    hours = 12;
+  }
+  if (hours > 12) {
+    hours = hours % 12;
+  }
+  offset = scheduleSound(hours, offset, time);
+  offset = scheduleSound('thirdstroke', offset, time);
 }
 
-function schedule(file, time){
-  setTimeout(function(){
-    file.start();
-  }, time);
-}
-
-function scheduleBy(file, time){
-  var newTime = time - (file.buffer.duration * 1000);
-  schedule(file, newTime);
+function scheduleSound(index, time, transportTime){
+  var file = george.get(index);
+  var newTime = time - (file.buffer.duration);
+  console.log(transportTime + newTime);
+  if (transportTime + newTime < 0) return;
+  file.start(newTime + transportTime);
   return newTime;
 }
 
