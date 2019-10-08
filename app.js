@@ -18,6 +18,7 @@ var toneLoop = new Tone.Loop(function(time){
 
 function start(){
   loadAudio();
+  document.getElementById('start').textContent = "Loading...";
   document.getElementById('start').disabled = "true";
   var start = new Date();
   setTimeout(function(){
