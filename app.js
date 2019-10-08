@@ -1,6 +1,6 @@
 var george = new Tone.Players().toMaster();
 var audioNow;
-var firstLoop = true;
+var noAudio = true;
 
 function clockLoop(){
   setInterval(function(){
@@ -10,13 +10,9 @@ function clockLoop(){
 }
 
 var toneLoop = new Tone.Loop(function(time){
-  if (audioNow.getSeconds() % 10 == 0) {
+  if (george.loaded && (audioNow.getSeconds() % 10 == 0 || noAudio == true)) {
     scheduleSounds(time);
-  // } else if(firstLoop == true) {
-  //   // console.log(george.loaded)
-  //   scheduleSounds(time, (audioNow.getSeconds() % 10))
   }
-  firstLoop = false;
   audioNow.setSeconds(audioNow.getSeconds() + 1);
 }, 1);
 
@@ -26,18 +22,22 @@ function start(){
   var start = new Date();
   setTimeout(function(){
     audioNow = new Date();
-    Tone.Transport.start();
     toneLoop.start(0);
+    Tone.Transport.start();
     clockLoop();
   }, 1000 - start.getMilliseconds());
 }
 
 function displayTime(now){
-  var timeElement = document.getElementById('time');
-  timeElement.textContent = "The time is " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+  if (noAudio == false) {
+    var timeElement = document.getElementById('time');
+    timeElement.textContent = "The time is " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+  }
 }
 
-function scheduleSounds(time, backtrack = 0){
+function scheduleSounds(time){
+  var backtrack = audioNow.getSeconds() % 10;
+  noAudio = false;
   time = time - backtrack;
   var nextNow = new Date(audioNow.getTime());
   nextNow.setSeconds(nextNow.getSeconds() + 10 - backtrack);
@@ -83,14 +83,14 @@ function scheduleSounds(time, backtrack = 0){
 function scheduleSound(index, time, transportTime){
   var file = george.get(index);
   var newTime = time - (file.buffer.duration);
-  console.log(transportTime + newTime);
-  if (transportTime + newTime < 0) return;
-  file.start(newTime + transportTime);
+  if(newTime + transportTime > 0) {
+    file.start(newTime + transportTime);
+  }
   return newTime;
 }
 
 function pad(number){
-  return ("0" + number.toString()).slice (-2);
+  return ("0" + number.toString()).slice(-2);
 }
 
 function loadAudio(){
