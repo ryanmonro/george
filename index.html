@@ -14,10 +14,6 @@
     .header {
       text-align: center;
     }
-    .footer {
-      padding-top: 20px;
-      width: 100%;
-    }
     #time {
       font-size: 24px;
     }
@@ -27,7 +23,10 @@
       height: 100px;
       width: 300px;
     }
-    
+    .border {
+      border-spacing: 2px;
+      border: 8px groove;
+    }
   </style>
 </head>
 <body>
@@ -36,7 +35,7 @@
   </div>
   <h1>1194 Online Time Service Home Page</h1>
   <p>
-    <img src="images/1990s.jpg" alt="">
+    <img class="border" src="images/1990s.jpg" alt="">
   </p>
   <p>
     <img src="images/new.gif" alt="" height="24">
@@ -46,8 +45,8 @@
   <p id="time"> 
   <button id="start" onClick="start();">Click here to start clock</button>
   </p>
-  <div class="footer">
-    <img src="images/socog.gif" alt="" ><br>
-  </div>
+  <p>
+    <img src="images/socog.gif" alt="" >
+  </p>
 </body>
 </html>
