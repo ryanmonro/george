@@ -1,10 +1,51 @@
 #!/bin/bash
 
-verbose=${1:-}  # any $1 will make it very verbose. Otherwise silent
+limit=0   # default looping limit. zero or less is infinite
 
+
+# usage: ./george.sh [v|0-9]
+# $1 is "v" then verbose
+# $1 is a number, then only loop that many times (for cron/automated silent use)
+# ...these options are exclusionary. 
+
+
+# loop limiting is intended for cron/similar, thus exclusionary to verbose. 
+case $1 in
+    v*)  
+        verbose=true
+        ;;
+    [1-9]*)
+        # loop limit if we start with a digit, we clean up the result
+        limit=$(echo "$1" | tr -d -c '[0-9]')
+        ;;
+esac
+
+#################### variables we'll find useful
 boldon=$(tput bold)
 redon=$(tput setaf 1)
 reset=$(tput sgr0)
+
+
+#################### functions are fun
+bail() {
+    echo $@
+    exit 1
+}
+
+#################### check our sanity
+# TODO: test more audio players. OSX has /usr/bin/afplay apparently
+PLAY=/usr/bin/mpv
+test -x $PLAY || bail "No audio player found. Bailing out."
+
+ntest=$(date +%3N)
+case $ntest in
+    [0-9][0-9][0-9])
+        true
+        ;;
+    *)
+        bail "No microsecond method found. Bailing out."
+        ;;
+esac
 
 
 # George is a 10 second loop.
@@ -38,7 +79,7 @@ audpath=audio/m4a
 [ -n "$verbose" ] && echo "$(date -Iseconds) ...Initialising George..."
 
 prevsec=$(date -d 'now -10 seconds' +%S)    # so the sanity test starts sane
-while true ; do
+while true; do
 
     # setup the sleep so that this loop starts at second +1
     # (this is self correcting for variance and starttime)
@@ -46,18 +87,18 @@ while true ; do
     # perhaps by script timing bugs here) and the sleep will be 9.x seconds,
     # thus skipping a loop.
     nowsec=$(date +%S)
-    nownano=$(date +%_N)
+    nowmicro=$(date +%_3N)
 
     sleepsec=$(((10-${nowsec:1:1})%10))
-    sleepnano=$((1000000000-$nownano))
+    sleepmicro=$((1000-$nowmicro))
     if [ -n "$verbose" ] ; then
         # merely bold probably means we ended previous loop early
         [ "$sleepsec" -gt 0 ] && echo -n $boldon
         # red probably means we ended late and are skipping a loop :(
         [ "$sleepsec" -gt 1 ] && echo -n "$redon"
-        echo -n "$sleepsec.${sleepnano:0:3}$reset "
+        echo -n "$sleepsec.$sleepmicro$reset "
     fi
-    sleep $sleepsec.$sleepnano
+    sleep $sleepsec.$sleepmicro
     # time should now be exactly 1 second into the loop
 
     # The time that George will be talking
@@ -65,9 +106,9 @@ while true ; do
     HOUR=${hourtmp#* }      # remove possible leading space
     MIN=$(date -d "$OFFSET" +%M)
     SEC=$(date -d "$OFFSET" +%S)
-    NANO=$(date -d "$OFFSET" +%N)
+    MICRO=$(date -d "$OFFSET" +%3N)
 
-    [ -n "$verbose" ] && echo -n "$HOUR:$MIN:$SEC.${NANO:0:3} "    # output the intended time
+    [ -n "$verbose" ] && echo -n "$HOUR:$MIN:$SEC.$MICRO "    # output the intended time
     case $SEC in
         00)
             sleep 1     # crude adjust because "precisely" is a shorter audio
@@ -106,15 +147,15 @@ while true ; do
 
     # now a similar loop to before, to set our first stroke to 8th second
     nowsec=$(date +%S)
-    nownanotmp=$(date +"%N %-N")   # called once for performance.
-    nownano=${nownanotmp% *}      # %N - for treating as a fraction in echo
-    nownanoclean=${nownanotmp#* } # %-N - for treating as a number in sleep calc
+    nowmicrotmp=$(date +"%3N %-3N")   # called once for performance.
+    nowmicro=${nowmicrotmp% *}      # %N - for treating as a fraction in echo
+    nowmicroclean=${nowmicrotmp#* } # %-N - for treating as a number in sleep calc
 
-    [ -n "$verbose" ] && echo -n "$nowsec.${nownano:0:3} "   # should be high x6 or low x7 second
+    [ -n "$verbose" ] && echo -n "$nowsec.$nowmicro "   # should be high x6 or low x7 second
 
     # if all crude adjusts are right, and mpv play speed was fine, we are in the 7th second and need to sleep for less than a second. 
     # if we're already into the x8 minute this returns negative, so let's just be silent :)
-    sleep $(((7-${nowsec:1:1})%10)).$((990000000-${nownanoclean})) >/dev/null 2>&1 # tweak the nanosecond to help avoid a race condition
+    sleep $(((7-${nowsec:1:1})%10)).$((990-${nowmicroclean})) >/dev/null 2>&1 # tweak the microsecond to help avoid a race condition
 
     # time should now be exactly at 8 seconds into the loop
 
@@ -137,4 +178,6 @@ while true ; do
     [ -n "$verbose" ] && cut -d ' ' -f 1 < /proc/loadavg
 
     prevsec=$nowsec     # for loop accuracy checking
+    count=$((count+1))
+    [ $count -eq $limit ] && break
 done
