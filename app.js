@@ -1,32 +1,34 @@
 var george = new Tone.Players().toMaster();
 var audioNow;
 var noAudio = true;
+var toneLoop;
 
 function clockLoop(){
   setInterval(function(){
     var now = new Date();
+    console.log("display ms", now.getMilliseconds())
     displayTime(now);
   }, 1000);
 }
-
-var toneLoop = new Tone.Loop(function(time){
-  if (george.loaded && (audioNow.getSeconds() % 10 == 0 || noAudio == true)) {
-    scheduleSounds(time);
-  }
-  audioNow.setSeconds(audioNow.getSeconds() + 1);
-}, 1);
 
 function start(){
   loadAudio();
   document.getElementById('start').textContent = "Loading...";
   document.getElementById('start').disabled = "true";
   var start = new Date();
+  var offset = 1000 - start.getMilliseconds();
   setTimeout(function(){
-    audioNow = new Date();
-    toneLoop.start(0);
-    Tone.Transport.start();
     clockLoop();
-  }, 1000 - start.getMilliseconds());
+  }, offset);
+  audioNow = new Date();
+  toneLoop = new Tone.Loop(function(time){
+    audioNow.setSeconds(audioNow.getSeconds() + 1);
+    if (george.loaded && (audioNow.getSeconds() % 10 == 0 || noAudio == true)) {
+      scheduleSounds(time, offset / 1000);
+    }
+  }, 1);
+  toneLoop.start(0);
+  Tone.Transport.start();
 }
 
 function displayTime(now){
@@ -36,10 +38,10 @@ function displayTime(now){
   }
 }
 
-function scheduleSounds(time){
+function scheduleSounds(time, offset){
   var backtrack = audioNow.getSeconds() % 10;
   noAudio = false;
-  time = time - backtrack;
+  time = time - backtrack + offset;
   var nextNow = new Date(audioNow.getTime());
   nextNow.setSeconds(nextNow.getSeconds() + 10 - backtrack);
   scheduleSound('stroke', 10, time);
