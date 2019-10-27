@@ -38,10 +38,10 @@ function displayTime(now){
   }
 }
 
-function scheduleSounds(time, offset){
+function scheduleSounds(time, offsetms){
   var backtrack = audioNow.getSeconds() % 10;
   noAudio = false;
-  time = time - backtrack + offset;
+  time = time - backtrack + offsetms;
   var nextNow = new Date(audioNow.getTime());
   nextNow.setSeconds(nextNow.getSeconds() + 10 - backtrack);
   scheduleSound('stroke', 10, time);
@@ -85,11 +85,11 @@ function scheduleSounds(time, offset){
 
 function scheduleSound(index, time, transportTime){
   var file = george.get(index);
-  var newTime = time - (file.buffer.duration);
-  if(newTime + transportTime > 0) {
-    file.start(newTime + transportTime);
+  var startTime = time - (file.buffer.duration);
+  if(startTime + transportTime > 0) {
+    file.start(startTime + transportTime);
   }
-  return newTime;
+  return startTime;
 }
 
 function pad(number){
