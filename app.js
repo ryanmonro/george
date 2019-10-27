@@ -6,25 +6,27 @@ var toneLoop;
 function clockLoop(){
   setInterval(function(){
     var now = new Date();
-    console.log("display ms", now.getMilliseconds())
     displayTime(now);
   }, 1000);
+}
+
+function offsetMillis(){
+  return (1000 - (new Date()).getMilliseconds());
 }
 
 function start(){
   loadAudio();
   document.getElementById('start').textContent = "Loading...";
   document.getElementById('start').disabled = "true";
-  var start = new Date();
-  var offset = 1000 - start.getMilliseconds();
   setTimeout(function(){
     clockLoop();
-  }, offset);
+  }, offsetMillis());
   audioNow = new Date();
+  var toneOffset = offsetMillis() / 1000;
   toneLoop = new Tone.Loop(function(time){
     audioNow.setSeconds(audioNow.getSeconds() + 1);
     if (george.loaded && (audioNow.getSeconds() % 10 == 0 || noAudio == true)) {
-      scheduleSounds(time, offset / 1000);
+      scheduleSounds(time, toneOffset);
     }
   }, 1);
   toneLoop.start(0);
