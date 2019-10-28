@@ -1,34 +1,32 @@
 var george = new Tone.Players().toMaster();
 var audioNow;
-var noAudio = true;
 var toneLoop;
+var noAudio = true;
+var toneOffset = 0;
+var soundNames = ['thirdstroke', 'seconds', 'precisely', 'and', 'oclock', 'stroke', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 30, 40, 50];
 
-function clockLoop(){
+function visualLoop(){
   setInterval(function(){
     var now = new Date();
     displayTime(now);
   }, 1000);
 }
 
-function offsetMillis(){
-  return (1000 - (new Date()).getMilliseconds());
-}
+function audioLoop(time){
+    audioNow.setSeconds(audioNow.getSeconds() + 1);
+    if (george.loaded && (audioNow.getSeconds() % 10 == 0 || noAudio == true)) {
+      scheduleSounds(time);
+    }
+  }
 
 function start(){
   loadAudio();
   document.getElementById('start').textContent = "Loading...";
   document.getElementById('start').disabled = "true";
-  setTimeout(function(){
-    clockLoop();
-  }, offsetMillis());
+  setTimeout(visualLoop, offsetMillis());
   audioNow = new Date();
-  var toneOffset = offsetMillis() / 1000;
-  toneLoop = new Tone.Loop(function(time){
-    audioNow.setSeconds(audioNow.getSeconds() + 1);
-    if (george.loaded && (audioNow.getSeconds() % 10 == 0 || noAudio == true)) {
-      scheduleSounds(time, toneOffset);
-    }
-  }, 1);
+  toneOffset = offsetMillis() / 1000;
+  toneLoop = new Tone.Loop(audioLoop, 1);
   toneLoop.start(0);
   Tone.Transport.start();
 }
@@ -40,19 +38,18 @@ function displayTime(now){
   }
 }
 
-function scheduleSounds(time, offsetms){
+function scheduleSounds(time){
   var backtrack = audioNow.getSeconds() % 10;
   noAudio = false;
-  time = time - backtrack + offsetms;
   var nextNow = new Date(audioNow.getTime());
   nextNow.setSeconds(nextNow.getSeconds() + 10 - backtrack);
-  scheduleSound('stroke', 10, time);
-  scheduleSound('stroke', 9, time);
-  scheduleSound('stroke', 8, time);
+  scheduleSound('stroke', 10 - backtrack + toneOffset, time);
+  scheduleSound('stroke', 9 - backtrack + toneOffset, time);
+  scheduleSound('stroke', 8 - backtrack + toneOffset, time);
   var seconds = nextNow.getSeconds();
   var minutes = nextNow.getMinutes();
   var hours = nextNow.getHours();
-  var offset = 8;
+  var offset = 8 - backtrack + toneOffset;
   if (seconds == 0) {
     offset = scheduleSound('precisely', offset, time);
   } else {
@@ -82,25 +79,30 @@ function scheduleSounds(time, offsetms){
     hours = hours % 12;
   }
   offset = scheduleSound(hours, offset, time);
+
   offset = scheduleSound('thirdstroke', offset, time);
 }
 
-function scheduleSound(index, time, transportTime){
+function scheduleSound(index, offset, transportTime){
   var file = george.get(index);
-  var startTime = time - (file.buffer.duration);
-  if(startTime + transportTime > 0) {
-    file.start(startTime + transportTime);
+  var newOffset = offset - (file.buffer.duration);
+  if(newOffset > 0) {
+    file.start(newOffset + transportTime);
   }
-  return startTime;
+  return newOffset;
+}
+
+function loadAudio(){
+  soundNames.forEach(function(prefix){
+    george.add(prefix, 'audio/m4a/' + prefix + '.aif.m4a');
+  })
 }
 
 function pad(number){
   return ("0" + number.toString()).slice(-2);
 }
 
-function loadAudio(){
-  ['thirdstroke', 'seconds', 'precisely', 'and', 'oclock', 'stroke', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-    20, 30, 40, 50].forEach(function(prefix){
-    george.add(prefix, 'audio/m4a/' + prefix + '.aif.m4a');
-  })
+function offsetMillis(){
+  // returns milliseconds until the next whole second is reached
+  return (1000 - (new Date()).getMilliseconds());
 }
